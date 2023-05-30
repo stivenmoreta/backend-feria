@@ -1,0 +1,9 @@
+#TODO: en construcción
+node_modules/
+dist
+.git
+.gitignore
+Dockerfile
+docker-compose.dev.yml
+docker-compose.prod.yml
+.dockerignore
