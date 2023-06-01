@@ -5,7 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 
 import * as bcrypt from 'bcrypt';
 
-import { User } from 'src/user/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 import { CreateUserDto, LoginUserDto } from './dto';
 import { JwtPayload } from './guards/interfaces';
 import { CommonService } from '../common/common.service';

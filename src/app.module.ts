@@ -10,11 +10,16 @@ import { ApolloDriver } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 
 import { AuthModule } from './auth/auth.module';
-import { UserModule } from './user/user.module';
+import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 
 import { EnvConfiguration } from './config/app.config';
 import { JoiValidationSchema } from './config/joi-schema.validation';
+import { CategoriesModule } from './categories/categories.module';
+import { ProductsModule } from './products/products.module';
+import { StoresModule } from './stores/stores.module';
+import { TradeProductsModule } from './trade-products/trade-products.module';
+import { SalesModule } from './sales/sales.module';
 
 
 
@@ -61,8 +66,13 @@ import { JoiValidationSchema } from './config/joi-schema.validation';
     }),
 
     AuthModule,
-    UserModule,
-    CommonModule
+    UsersModule,
+    CommonModule,
+    CategoriesModule,
+    ProductsModule,
+    StoresModule,
+    TradeProductsModule,
+    SalesModule
     ],
 })
 export class AppModule {}

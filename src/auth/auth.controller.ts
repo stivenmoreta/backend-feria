@@ -7,7 +7,7 @@ import { RawHeaders, GetUser, Auth } from './decorators';
 import { RoleProtected } from './decorators/role-protected.decorator';
 
 import { CreateUserDto, LoginUserDto } from './dto';
-import { User } from 'src/user/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 import { UserRoleGuard } from './guards/user-role.guard';
 import { ValidRoles } from './guards/interfaces';
 
