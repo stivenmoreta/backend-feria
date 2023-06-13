@@ -3,10 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Store } from './entities/store.entity';
+import { User } from 'src/users/entities/user.entity';
 
 import { CreateStoreInput, UpdateStoreInput } from './dto';
 import { PaginationWithSearch } from '../common/dto/pagination-search.args';
-import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class StoresService {
@@ -53,7 +53,6 @@ export class StoresService {
     return store;
   }
 
-  async 
 
   async update(id: string, updateStoreInput: UpdateStoreInput): Promise<Store> {
     const store = await this.storeRepository.preload(UpdateStoreInput);

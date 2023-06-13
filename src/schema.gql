@@ -4,10 +4,10 @@
 
 type Sale {
   id: ID!
-  name: String!
   paymentMethod: PaymentMethods!
   createdAt: DateTime!
   updatedAt: DateTime!
+  deletedAt: DateTime
 }
 
 """métodos de pagos validos para registrar una venta"""
@@ -23,18 +23,32 @@ scalar DateTime
 
 type TradeProduct {
   id: ID!
-  name: String!
+  originalStock: Int!
+  stock: Int!
+  purchasePrice: Int!
+  salePrice: Int!
   createdAt: DateTime!
   updatedAt: DateTime!
+  deletedAt: DateTime
   sales(offset: Int = 0, limit: Int = 10, fecha: DateTime, paymentMethod: PaymentMethods): [Sale!]!
+  countSale: Float!
+  countSalePaymentMethod(paymentMethod: PaymentMethods): Float!
 }
 
 type Product {
   id: ID!
   name: String!
+  size: SizeProducts!
   createdAt: DateTime!
   updatedAt: DateTime!
   tradeProducts(offset: Int = 0, limit: Int = 10, search: String): [TradeProduct!]!
+}
+
+"""Tamaño de los productos"""
+enum SizeProducts {
+  chico
+  mediano
+  grande
 }
 
 type Category {
@@ -68,10 +82,6 @@ type Query {
   user(id: ID!): User!
   products(offset: Int = 0, limit: Int = 10, search: String): [Product!]!
   product(id: ID!): Product!
-  tradeProducts: [TradeProduct!]!
-  tradeProduct(id: Int!): TradeProduct!
-  sales: [Sale!]!
-  sale(id: Int!): Sale!
   stores(offset: Int = 0, limit: Int = 10, search: String): [Store!]!
 }
 
@@ -82,13 +92,13 @@ type Mutation {
   removeCategory(id: ID!): Category!
   createProduct(createProductInput: CreateProductInput!): Product!
   updateProduct(updateProductInput: UpdateProductInput!): Product!
-  removeProduct(id: Int!): Product!
+  removeProduct(id: ID!): Product!
   createTradeProduct(createTradeProductInput: CreateTradeProductInput!): TradeProduct!
   updateTradeProduct(updateTradeProductInput: UpdateTradeProductInput!): TradeProduct!
-  removeTradeProduct(id: Int!): TradeProduct!
+  removeTradeProduct(id: ID!): TradeProduct!
   createSale(createSaleInput: CreateSaleInput!): Sale!
   updateSale(updateSaleInput: UpdateSaleInput!): Sale!
-  removeSale(id: Int!): Sale!
+  removeSale(id: ID!): Sale!
   createStore(createStoreInput: CreateStoreInput!): Store!
   updateStore(updateStoreInput: UpdateStoreInput!): Store!
   removeStore(id: ID!): Store!
@@ -133,25 +143,35 @@ input UpdateProductInput {
 }
 
 input CreateTradeProductInput {
-  """Example field (placeholder)"""
-  exampleField: Int!
+  originalStock: Int!
+  purchasePrice: Int!
+  salePrice: Int!
+  productId: ID!
 }
 
 input UpdateTradeProductInput {
-  """Example field (placeholder)"""
-  exampleField: Int
-  id: Int!
+  originalStock: Int
+  purchasePrice: Int
+  salePrice: Int
+  productId: ID
+  id: ID!
 }
 
 input CreateSaleInput {
-  """Example field (placeholder)"""
-  exampleField: Int!
+  """método de pago de la venta"""
+  paymentMethod: PaymentMethods!
+
+  """id del producto de la venta"""
+  tradeProductId: ID!
 }
 
 input UpdateSaleInput {
-  """Example field (placeholder)"""
-  exampleField: Int
-  id: Int!
+  """método de pago de la venta"""
+  paymentMethod: PaymentMethods
+
+  """id del producto de la venta"""
+  tradeProductId: ID
+  id: ID!
 }
 
 input CreateStoreInput {

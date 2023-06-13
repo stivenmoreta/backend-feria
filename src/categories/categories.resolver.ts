@@ -1,18 +1,13 @@
 import { ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import {
   Resolver,
-  Query,
   Mutation,
   Args,
-  Int,
   ResolveField,
   ID,
   Parent,
 } from '@nestjs/graphql';
 
-import { JwtAuthGqlGuard } from 'src/auth/guards';
-import { CurrentUserGql } from 'src/auth/decorators';
-import { ValidRoles as VR } from 'src/auth/guards/interfaces';
 
 import { User } from '../users/entities/user.entity';
 import { Category } from './entities/category.entity';
@@ -22,6 +17,10 @@ import { ProductsService } from '../products/products.service';
 
 import { CreateCategoryInput, UpdateCategoryInput } from './dto';
 import { PaginationWithSearch } from '../common/dto/pagination-search.args';
+
+import { JwtAuthGqlGuard } from '../auth/guards';
+import { CurrentUserGql } from '../auth/decorators';
+import { ValidRoles as VR } from '../auth/guards/interfaces';
 
 @Resolver(() => Category)
 @UseGuards(JwtAuthGqlGuard)
@@ -33,8 +32,8 @@ export class CategoriesResolver {
 
   @Mutation(() => Category, { name: 'createCategory' })
   createCategory(
-    @CurrentUserGql([VR.user]) user: User,
     @Args('createCategoryInput') createCategoryInput: CreateCategoryInput,
+    @CurrentUserGql([VR.user]) user: User,
   ): Promise<Category> {
     return this.categoriesService.create(createCategoryInput);
   }
@@ -61,8 +60,8 @@ export class CategoriesResolver {
 
   @Mutation(() => Category, { name: 'removeCategory' })
   removeCategory(
+    @Args('id', { type: () => ID },ParseUUIDPipe) id: string,
     @CurrentUserGql([VR.admin]) user: User,
-    @Args('id', { type: () => ID }) id: string,
   ): Promise<Category> {
     return this.categoriesService.remove(id);
   }

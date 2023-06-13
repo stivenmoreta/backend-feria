@@ -1,12 +1,18 @@
 import { join } from 'path';
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  NestMiddleware,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 
 import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver } from '@nestjs/apollo';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 
 import { AuthModule } from './auth/auth.module';
@@ -20,40 +26,38 @@ import { ProductsModule } from './products/products.module';
 import { StoresModule } from './stores/stores.module';
 import { TradeProductsModule } from './trade-products/trade-products.module';
 import { SalesModule } from './sales/sales.module';
+import { LogersModule } from './logers/logers.module';
 
+import { LoggerMiddleware } from './logers/middlewares/loger.middleware';
 
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load:[EnvConfiguration],
+      load: [EnvConfiguration],
       //con el paquete joi podemos validar el .env
       //TODO: investigar el paquete
-      validationSchema: JoiValidationSchema
+      validationSchema: JoiValidationSchema,
     }),
 
+    GraphQLModule.forRootAsync<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      imports: [AuthModule],
+      inject: [JwtService],
+      useFactory: async (jwtService: JwtService) => ({
+        playground: false,
+        autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+        plugins: [ApolloServerPluginLandingPageLocalDefault()],
+        context({ req }) {
+          const token = req.headers.authorization?.replace('Bearer ', '');
+          if (!token) throw Error('Token needed');
 
-      GraphQLModule.forRootAsync({
-        driver:ApolloDriver,
-        imports:[AuthModule],
-        inject:[JwtService],
-        useFactory: async (jwtService:JwtService) => ({
-            playground: false,
-            autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
-            plugins: [
-              ApolloServerPluginLandingPageLocalDefault()
-            ],
-            context({req}){
-
-              const token = req.headers.authorization?.replace('Bearer ','')      
-              if(!token) throw Error('Token needed')
-
-              const payload = jwtService.decode(token)
-              if(!payload) throw Error('Token not valid')
-
-            }
-        })
+          const payload = jwtService.decode(token);
+          if (!payload) throw Error('Token not valid');
+        },
       }),
+    }),
+
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -64,7 +68,10 @@ import { SalesModule } from './sales/sales.module';
       synchronize: true,
       autoLoadEntities: true,
     }),
-
+    MongooseModule.forRoot(process.env.DB_MONGO_URL,{
+      dbName: 'feriaDB',
+    }),
+    LogersModule,
     AuthModule,
     UsersModule,
     CommonModule,
@@ -72,7 +79,11 @@ import { SalesModule } from './sales/sales.module';
     ProductsModule,
     StoresModule,
     TradeProductsModule,
-    SalesModule
-    ],
+    SalesModule,
+  ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}

@@ -1,4 +1,4 @@
-import { UseGuards } from '@nestjs/common';
+import { UseGuards, ParseUUIDPipe } from '@nestjs/common';
 import {
   Resolver,
   Query,
@@ -10,9 +10,6 @@ import {
   Parent,
 } from '@nestjs/graphql';
 
-import { JwtAuthGqlGuard } from '../auth/guards';
-import { CurrentUserGql } from '../auth/decorators';
-import { ValidRoles as VR } from '../auth/guards/interfaces';
 
 import { User } from '../users/entities/user.entity';
 import { Store } from './entities/store.entity';
@@ -22,8 +19,9 @@ import { CategoriesService } from '../categories/categories.service';
 import { CreateStoreInput, UpdateStoreInput } from './dto';
 import { PaginationWithSearch } from '../common/dto/pagination-search.args';
 
-//! Con el field y lazy true no es necesario el resolveField para todos las entidades, a excepción de entidades principales.
-//! ejemplo: store, category, product
+import { JwtAuthGqlGuard } from '../auth/guards';
+import { CurrentUserGql } from '../auth/decorators';
+import { ValidRoles as VR } from '../auth/guards/interfaces';
 
 @Resolver(() => Store)
 @UseGuards(JwtAuthGqlGuard)
@@ -35,8 +33,8 @@ export class StoresResolver {
 
   @Mutation(() => Store, { name: 'createStore' })
   createStore(
-    @CurrentUserGql([VR.user]) user: User,
     @Args('createStoreInput') createStoreInput: CreateStoreInput,
+    @CurrentUserGql([VR.user]) user: User,
   ): Promise<Store> {
     return this.storesService.create(createStoreInput, user);
   }
@@ -51,16 +49,16 @@ export class StoresResolver {
 
   @Mutation(() => Store, { name: 'updateStore' })
   updateStore(
-    @CurrentUserGql([VR.admin]) user: User,
     @Args('updateStoreInput') updateStoreInput: UpdateStoreInput,
+    @CurrentUserGql([VR.user]) user: User,
   ): Promise<Store> {
     return this.storesService.update(updateStoreInput.id, updateStoreInput);
   }
 
   @Mutation(() => Store, { name: 'removeStore' })
   removeStore(
-    @CurrentUserGql([VR.admin]) user: User,
-    @Args('id', { type: () => ID }) id: string,
+    @Args('id', { type: () => ID },ParseUUIDPipe) id: string,
+    @CurrentUserGql([VR.user]) user: User,
   ): Promise<Store> {
     return this.storesService.remove(id);
   }

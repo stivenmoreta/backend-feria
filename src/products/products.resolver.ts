@@ -1,3 +1,4 @@
+import { ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import {
   Resolver,
   Query,
@@ -8,18 +9,18 @@ import {
   ID,
   Parent,
 } from '@nestjs/graphql';
-import { ProductsService } from './products.service';
+
 import { Product } from './entities/product.entity';
-import { CreateProductInput } from './dto/create-product.input';
-import { UpdateProductInput } from './dto/update-product.input';
 import { TradeProduct } from 'src/trade-products/entities/trade-product.entity';
-import { CurrentUserGql } from 'src/auth/decorators';
 import { User } from 'src/users/entities/user.entity';
-import { ParseUUIDPipe, UseGuards } from '@nestjs/common';
-import { ValidRoles as VR } from 'src/auth/guards/interfaces';
+import { ProductsService } from './products.service';
 import { TradeProductsService } from '../trade-products/trade-products.service';
+import { CreateProductInput, UpdateProductInput } from './dto';
 import { PaginationWithSearch } from 'src/common/dto';
+
 import { JwtAuthGqlGuard } from 'src/auth/guards';
+import { CurrentUserGql } from 'src/auth/decorators';
+import { ValidRoles as VR } from 'src/auth/guards/interfaces';
 
 @Resolver(() => Product)
 @UseGuards(JwtAuthGqlGuard)
@@ -29,19 +30,19 @@ export class ProductsResolver {
     private readonly tradeProductsService: TradeProductsService,
   ) {}
 
-  @Mutation(() => Product)
+  @Mutation(() => Product, { name: 'createProduct' })
   createProduct(
     @Args('createProductInput') createProductInput: CreateProductInput,
     @CurrentUserGql([VR.user]) user: User,
-  ) {
+  ): Promise<Product> {
     return this.productsService.create(createProductInput);
   }
 
   @Query(() => [Product], { name: 'products' })
   findAll(
     @CurrentUserGql([VR.user]) user: User,
-    @Args() PaginationWithSearch: PaginationWithSearch
-  ) {
+    @Args() PaginationWithSearch: PaginationWithSearch,
+  ): Promise<Product[]>{
     return this.productsService.findAllByUser(PaginationWithSearch, user);
   }
 
@@ -53,18 +54,22 @@ export class ProductsResolver {
     return this.productsService.findOne(id);
   }
 
-  @Mutation(() => Product)
+  @Mutation(() => Product, { name: 'updateProduct' })
   updateProduct(
     @Args('updateProductInput') updateProductInput: UpdateProductInput,
-  ) {
+    @CurrentUserGql([VR.user]) user: User,
+  ): Promise<Product>{
     return this.productsService.update(
       updateProductInput.id,
       updateProductInput,
     );
   }
 
-  @Mutation(() => Product)
-  removeProduct(@Args('id', { type: () => Int }) id: number) {
+  @Mutation(() => Product, { name: 'removeProduct' })
+  removeProduct(
+    @Args('id', { type: () => ID }, ParseUUIDPipe) id: string,
+    @CurrentUserGql([VR.user]) user: User,
+  ): Promise<Product> {
     return this.productsService.remove(id);
   }
 
@@ -73,7 +78,7 @@ export class ProductsResolver {
     @Args() paginationWithSearch: PaginationWithSearch,
     @Parent() product: Product,
     @CurrentUserGql() user: User,
-  ) {
+  ): Promise<TradeProduct[]>{
     return this.tradeProductsService.findAllByProductId(
       paginationWithSearch,
       product.id,

@@ -1,69 +1,92 @@
+import { UseGuards, ParseUUIDPipe } from '@nestjs/common';
 import {
   Resolver,
-  Query,
   Mutation,
   Args,
-  Int,
   ResolveField,
   Parent,
+  ID,
 } from '@nestjs/graphql';
-import { TradeProductsService } from './trade-products.service';
+
+import { User } from '../users/entities/user.entity';
+import { Sale } from '../sales/entities/sale.entity';
 import { TradeProduct } from './entities/trade-product.entity';
-import { CreateTradeProductInput } from './dto/create-trade-product.input';
-import { UpdateTradeProductInput } from './dto/update-trade-product.input';
-import { Sale } from 'src/sales/entities/sale.entity';
-import { User } from 'src/users/entities/user.entity';
-import { CurrentUserGql } from 'src/auth/decorators';
 import { SalesService } from '../sales/sales.service';
-import { PaginationSalesArgs } from 'src/sales/dto/pagination-sales.args';
+import { TradeProductsService } from './trade-products.service';
+import { CreateTradeProductInput,UpdateTradeProductInput } from './dto';
+import { PaginationSalesArgs } from '../sales/dto/pagination-sales.args';
+import { PaymentMethodArgs } from '../sales/dto/paymen-method.args';
+
+import { JwtAuthGqlGuard } from 'src/auth/guards';
+import { CurrentUserGql } from 'src/auth/decorators';
+import { ValidRoles as VR } from 'src/auth/guards/interfaces';
 
 @Resolver(() => TradeProduct)
+@UseGuards(JwtAuthGqlGuard)
 export class TradeProductsResolver {
   constructor(
     private readonly tradeProductsService: TradeProductsService,
     private readonly salesService: SalesService,
   ) {}
 
-  @Mutation(() => TradeProduct)
+  @Mutation(() => TradeProduct, { name: 'createTradeProduct' })
   createTradeProduct(
     @Args('createTradeProductInput')
     createTradeProductInput: CreateTradeProductInput,
-  ) {
+    @CurrentUserGql([VR.user]) user: User,
+  ): Promise<TradeProduct> {
     return this.tradeProductsService.create(createTradeProductInput);
   }
 
-  @Query(() => [TradeProduct], { name: 'tradeProducts' })
-  findAll() {
-    return; //his.tradeProductsService.findAll();
-  }
-
-  @Query(() => TradeProduct, { name: 'tradeProduct' })
-  findOne(@Args('id', { type: () => Int }) id: number) {
-    return this.tradeProductsService.findOne(id);
-  }
-
-  @Mutation(() => TradeProduct)
+  @Mutation(() => TradeProduct, { name: 'updateTradeProduct' })
   updateTradeProduct(
     @Args('updateTradeProductInput')
     updateTradeProductInput: UpdateTradeProductInput,
-  ) {
+    @CurrentUserGql([VR.user]) user: User,
+  ): Promise<TradeProduct> {
     return this.tradeProductsService.update(
       updateTradeProductInput.id,
       updateTradeProductInput,
     );
   }
 
-  @Mutation(() => TradeProduct)
-  removeTradeProduct(@Args('id', { type: () => Int }) id: number) {
+  @Mutation(() => TradeProduct, { name: 'removeTradeProduct' })
+  removeTradeProduct(
+    @Args('id', { type: () => ID },ParseUUIDPipe) id: string,
+    @CurrentUserGql([VR.user]) user: User,
+  ): Promise<TradeProduct>{
     return this.tradeProductsService.remove(id);
   }
 
   @ResolveField(() => [Sale], { name: 'sales' })
   getSalesByTradeProduct(
     @Parent() tradeProduct: TradeProduct,
-    @Args() paginationSalesArgs:PaginationSalesArgs,
+    @Args() paginationSalesArgs: PaginationSalesArgs,
     @CurrentUserGql() user: User,
-  ):Promise<Sale[]> {
-    return this.salesService.findAllByTradeProductId(paginationSalesArgs,tradeProduct.id);
+  ): Promise<Sale[]> {
+    return this.salesService.findAllByTradeProductId(
+      paginationSalesArgs,
+      tradeProduct.id,
+    );
+  }
+
+  @ResolveField(() => Number, { name: 'countSale' })
+  getCountSale(
+    @Parent() tradeProduct: TradeProduct,
+    @CurrentUserGql() user: User,
+  ): Promise<number> {
+    return this.salesService.countSalesByTradeProductId(tradeProduct.id);
+  }
+
+  @ResolveField(() => Number, { name: 'countSalePaymentMethod' })
+  getCountSalePaymentMethod(
+    @Parent() tradeProduct: TradeProduct,
+    @Args() paymentMethodArgs: PaymentMethodArgs,
+    @CurrentUserGql() user: User,
+  ): Promise<number> {
+    return this.salesService.countPaymentMethodByTradeProductId(
+      paymentMethodArgs.paymentMethod,
+      tradeProduct.id,
+    );
   }
 }

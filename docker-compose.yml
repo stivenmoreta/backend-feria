@@ -10,6 +10,18 @@ services:
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
-    container_name: ${DB_NAME}
+    container_name: ${DB_CONTAINER_NAMEDB}
     volumes:
       - ./postgres-db:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:5
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    container_name: ${MONGO_INITDB_CONTAINER_NAMEDB}
+    volumes:
+      - ./mongo-db:/data/db

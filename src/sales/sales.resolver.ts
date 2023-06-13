@@ -1,35 +1,41 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
-import { SalesService } from './sales.service';
+import { UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import { Resolver, Mutation, Args, ID } from '@nestjs/graphql';
+
 import { Sale } from './entities/sale.entity';
-import { CreateSaleInput } from './dto/create-sale.input';
-import { UpdateSaleInput } from './dto/update-sale.input';
+import { User } from 'src/users/entities/user.entity';
+import { SalesService } from './sales.service';
+import { CreateSaleInput, UpdateSaleInput } from './dto';
+
+import { JwtAuthGqlGuard } from 'src/auth/guards';
+import { CurrentUserGql } from 'src/auth/decorators';
+import { ValidRoles as VR } from 'src/auth/guards/interfaces';
 
 @Resolver(() => Sale)
+@UseGuards(JwtAuthGqlGuard)
 export class SalesResolver {
   constructor(private readonly salesService: SalesService) {}
 
-  @Mutation(() => Sale)
-  createSale(@Args('createSaleInput') createSaleInput: CreateSaleInput) {
+  @Mutation(() => Sale, { name: 'createSale' })
+  createSale(
+    @Args('createSaleInput') createSaleInput: CreateSaleInput,
+    @CurrentUserGql([VR.user]) user: User,
+  ): Promise<Sale> {
     return this.salesService.create(createSaleInput);
   }
 
-  @Query(() => [Sale], { name: 'sales' })
-  findAll() {
-    return //this.salesService.findAll();
-  }
-
-  @Query(() => Sale, { name: 'sale' })
-  findOne(@Args('id', { type: () => Int }) id: number) {
-    return this.salesService.findOne(id);
-  }
-
-  @Mutation(() => Sale)
-  updateSale(@Args('updateSaleInput') updateSaleInput: UpdateSaleInput) {
+  @Mutation(() => Sale, { name: 'updateSale' })
+  updateSale(
+    @Args('updateSaleInput') updateSaleInput: UpdateSaleInput,
+    @CurrentUserGql([VR.user]) user: User,
+  ): Promise<Sale> {
     return this.salesService.update(updateSaleInput.id, updateSaleInput);
   }
 
-  @Mutation(() => Sale)
-  removeSale(@Args('id', { type: () => Int }) id: number) {
+  @Mutation(() => Sale, { name: 'removeSale' })
+  removeSale(
+    @Args('id', { type: () => ID }, ParseUUIDPipe) id: string,
+    @CurrentUserGql([VR.user]) user: User,
+  ): Promise<Sale>{
     return this.salesService.remove(id);
   }
 }

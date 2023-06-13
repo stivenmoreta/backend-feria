@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { CreateTradeProductInput } from './dto/create-trade-product.input';
-import { UpdateTradeProductInput } from './dto/update-trade-product.input';
-import { PaginationWithSearch } from '../common/dto/pagination-search.args';
-import { Product } from 'src/products/entities/product.entity';
-import { TradeProduct } from './entities/trade-product.entity';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
+import { TradeProduct } from './entities/trade-product.entity';
+
+import { CreateTradeProductInput,UpdateTradeProductInput } from './dto';
+import { PaginationWithSearch } from '../common/dto/pagination-search.args';
+
 
 @Injectable()
 export class TradeProductsService {
@@ -14,12 +15,31 @@ export class TradeProductsService {
     private tradeProductRepository: Repository<TradeProduct>,
   ) {}
 
-  create(createTradeProductInput: CreateTradeProductInput) {
-    return 'This action adds a new tradeProduct';
+  async create({
+    productId,
+    ...res
+  }: CreateTradeProductInput): Promise<TradeProduct> {
+    const newProduct = this.tradeProductRepository.create({
+      product: { id: productId },
+      ...res,
+    });
+
+    return await this.tradeProductRepository.save(newProduct);
   }
 
-  async findAllByProductId({limit,offset,search}: PaginationWithSearch,productId: string) {
-    
+  async findOne(id: string): Promise<TradeProduct> {
+    const tradeProduct = await this.tradeProductRepository.findOneBy({ id });
+
+    if (!tradeProduct)
+      throw new NotFoundException(`tradeProduct with id: ${id} not found`);
+
+    return tradeProduct;
+  }
+
+  async findAllByProductId(
+    { limit, offset, search }: PaginationWithSearch,
+    productId: string,
+  ): Promise<TradeProduct[]> {
     const queryBuilder = this.tradeProductRepository
       .createQueryBuilder('tradeProduct')
       .where('tradeProduct.product.id = :productId', { productId })
@@ -35,15 +55,25 @@ export class TradeProductsService {
     return await queryBuilder.getMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} tradeProduct`;
+  async update(
+    id: string,
+    updateTradeProductInput: UpdateTradeProductInput,
+  ): Promise<TradeProduct> {
+    const tradeProduct = await this.tradeProductRepository.preload(
+      updateTradeProductInput,
+    );
+
+    if (!tradeProduct)
+      throw new NotFoundException(`tradeProduct with id: ${id} not found`);
+
+    return this.tradeProductRepository.save(tradeProduct);
   }
 
-  update(id: number, updateTradeProductInput: UpdateTradeProductInput) {
-    return `This action updates a #${id} tradeProduct`;
-  }
+  async remove(id: string): Promise<TradeProduct> {
+    const tradeProduct = await this.findOne(id);
 
-  remove(id: number) {
-    return `This action removes a #${id} tradeProduct`;
+    await this.tradeProductRepository.softDelete(id);
+
+    return tradeProduct;
   }
 }
