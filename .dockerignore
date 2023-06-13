@@ -7,3 +7,6 @@ Dockerfile
 docker-compose.dev.yml
 docker-compose.prod.yml
 .dockerignore
+
+/mongo-db
+/postgres-db

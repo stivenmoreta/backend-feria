@@ -37,4 +37,5 @@ lerna-debug.log*
 
 
 /postgres-db
+/mongo-db
 .env
