@@ -2,9 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { CreateLogerInput } from './dto/create-loger.input';
-import { UpdateLogerInput } from './dto/update-loger.input';
 import { Loger, LogerDocument } from './entities/loger.entity';
+import { CreateLogerInput } from './dto/create-loger.input';
 
 @Injectable()
 export class LogersService {
@@ -12,27 +11,17 @@ export class LogersService {
     @InjectModel(Loger.name) private readonly logerModel: Model<LogerDocument>,
   ) {}
 
-  async create(createLogerInput: CreateLogerInput): Promise<void>{
-
+  async create(createLogerInput: CreateLogerInput): Promise<void> {
     const createdLoger = new this.logerModel(createLogerInput);
 
     await createdLoger.save();
-
   }
 
-  findAll() {
-    return `This action returns all logers`;
+  async findAll(): Promise<Loger[]> {
+    return await this.logerModel.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} loger`;
-  }
-
-  update(id: number, updateLogerInput: UpdateLogerInput) {
-    return `This action updates a #${id} loger`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} loger`;
+  async findOne(logId: string): Promise<Loger> {
+    return await this.logerModel.findOne({ logId });
   }
 }
